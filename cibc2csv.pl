@@ -2,13 +2,17 @@
 use strict;
 use warnings;
 
-my $file = '../cibc.csv';
-open my $info, $file or die "Could not open $file: $!";
-
 my $notdonefile = '>../notdone.csv';
-open my $ndinfo, $notdonefile or die "Could not open $file: $!";
+open my $ndinfo, $notdonefile or die "Could not open $notdonefile: $!";
+my $donefile = '>../done.ldg';
+open my $doneinfo, $donefile or die "Could not open $donefile: $!";
 
-while( my $line = <$info>)  {
+open( FILE, "<../cibc.csv" )
+    or die( "Can't open file cibc.csv $!" );
+
+my @lines = reverse <FILE>;
+close FILE;
+foreach my $line (@lines) {
     chomp($line);
     my ($date,$desc,$value) = split(',',$line);
     $value =~ s/\s*$//g;
@@ -22,9 +26,9 @@ while( my $line = <$info>)  {
         next;
     }
     $date =~ s/-/\//g;
-    print $date." $keyWord\n";
-    print "\t$expenseWord\t\t\t\t\t\t\t\t\t\$$value\t;$keyWord\n";
-    print "\tAssets:Checking\t\t\t\t\t\t\t\t\$-$value\n\n";
+    print $doneinfo $date." $keyWord\n";
+    print $doneinfo "\t$expenseWord\t\t\t\t\$$value\t;$keyWord\n";
+    print $doneinfo "\tAssets:Checking\t\t\t\t\t\t\t\t\$-$value\n\n";
 }
 
 sub processDesc{
@@ -59,8 +63,6 @@ sub processMatchedWord {
             $keyWord = $splitWords[0]." ".$splitWords[1];
             ($keyWord, $regexInput) = &getKeyWordRegex($keyWord);
             $expenseWord = &SearchForKeyWord($regexInput);
-            #print $keyWord."\n";
-            #print $regexInput."\n";
             return ($keyWord, $expenseWord);
         } else {
             #not greater than 6. Add until greater than 6 or runs out of words to ad..
@@ -75,17 +77,12 @@ sub processMatchedWord {
             }
             ($keyWord, $regexInput) = &getKeyWordRegex($keyWord);
             $expenseWord = &SearchForKeyWord($regexInput);
-            #print $keyWord."\n";
-            #print $regexInput."\n";
             return ($keyWord, $expenseWord);
         }
     } else  {
-        #print $matched."\n";
         $keyWord = $matched;
         ($keyWord, $regexInput) = &getKeyWordRegex($keyWord);
         $expenseWord = &SearchForKeyWord($regexInput);
-        #print $keyWord."\n";
-        #print $regexInput."\n";
         return ($keyWord, $expenseWord);
     }
 
@@ -104,11 +101,30 @@ sub getKeyWordRegex {
 
 sub SearchForKeyWord {
     my $regexInput = shift;
-    my $expenseWord = "expenseWord";
+    my $expenseWord = "";
+
+    open( FILE, "<../finance.ldg" )
+        or die( "Can't open file finance.ldg $!" );
+
+    my @lines = reverse <FILE>;
+    close FILE;
+    foreach my $line (@lines) {
+        chomp($line);
+        $line =~ s/\s*$//g;
+        if($line =~ /($regexInput)/gi) {
+            if($line =~ /gift/i) {
+                #TODO fix.
+                next;
+            }
+            my $matched = $1;
+            $matched =~ s/\s*$//g;
+            return (split(/[\t ]+/, $matched))[0];
+        }
+    }
     return $expenseWord;
 }
 
 close $ndinfo;
-close $info;
+close $doneinfo;
 
 exit 0;
