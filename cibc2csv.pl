@@ -2,13 +2,13 @@
 use strict;
 use warnings;
 
+open( FILE, "<../cibc.csv" )
+    or die( "Can't open file cibc.csv $!" );
+
 my $notdonefile = '>../notdone.csv';
 open my $ndinfo, $notdonefile or die "Could not open $notdonefile: $!";
 my $donefile = '>../done.ldg';
 open my $doneinfo, $donefile or die "Could not open $donefile: $!";
-
-open( FILE, "<../cibc.csv" )
-    or die( "Can't open file cibc.csv $!" );
 
 my @lines = reverse <FILE>;
 close FILE;
@@ -121,6 +121,8 @@ sub SearchForKeyWord {
             return (split(/[\t ]+/, $matched))[0];
         }
     }
+    #TODO Add documentation.
+    print "Returning empty ('$expenseWord') expenseWord for $regexInput in SearchForKeyWord\n";
     return $expenseWord;
 }
 
